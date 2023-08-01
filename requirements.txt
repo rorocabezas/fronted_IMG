@@ -1,0 +1,10 @@
+streamlit==1.25.0
+extra-streamlit-components==0.1.56
+mysql-connector-python==8.0.30
+mysqlclient==2.1.1
+SQLAlchemy==1.4.42
+streamlit-authenticator==0.2.2
+streamlit-card==0.0.4
+streamlit-option-menu==0.3.2
+toml==0.10.2
+
