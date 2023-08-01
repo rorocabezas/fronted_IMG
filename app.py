@@ -54,6 +54,7 @@ def ingreso_acum_mes_actual():
 	KPI_INGRESOS_ACTUAL_MES.Ingresos_SSS
 FROM
 	KPI_INGRESOS_ACTUAL_MES
+  LIMIT 10
     
     """, ttl=600)
     return df_acum_mes_actual
@@ -72,6 +73,7 @@ def ingreso_acum_mes_anterior():
 	KPI_INGRESOS_ANTERIOR_MES.Ingresos_SSS as ingresos_sss_anterior
 FROM
 	KPI_INGRESOS_ANTERIOR_MES
+  LIMIT 10
     
     """, ttl=600)
     return df_acum_mes_anterior
@@ -99,10 +101,23 @@ df_acum_mes_ant = ingreso_acum_mes_anterior()
 
 #st.dataframe(df_acum_mes_ant.head(5))
 
-#df2 = pd.merge(df, df1,  how='left', left_on=['Courses','Fee'], right_on = ['Courses','Fee'])
+
 
 df_agrupado = pd.merge(df_acum_mes, df_acum_mes_ant, how='left', left_on=['branch_office', 'Periodo'], right_on=['branch_office', 'Periodo'])
 df_agrupado[['Periodo','Trimestre','branch_office','supervisor','ticket_number','Venta_SSS', 'Ingresos_SSS', 'ticket_anterior', 'ventas_sss_anterior' , 'ingresos_sss_anterior']]
+
+
+## Obtén la lista de países
+Periodo = df_agrupado['Periodo'].unique()
+ 
+## Crea la caja de selección
+selected_periodo = st.selectbox('Elige un periodo:', Periodo)
+ 
+## Filtra los datos
+filtered_data = df_agrupado[df_agrupado['Periodo'] == selected_periodo]
+
+
+
 
 df_agrupado.head(50)
 #st.dataframe(df_agrupado, height=400)
