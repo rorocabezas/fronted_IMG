@@ -94,4 +94,3 @@ else:
     # Si se han seleccionado opciones para al menos uno de los filtros, mostrar el DataFrame filtrado
     st.write('Datos de las opciones seleccionadas:')
     st.dataframe(df_filtrado[columns_to_show], height=400)
-
