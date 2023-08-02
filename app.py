@@ -2,8 +2,6 @@
 
 import streamlit as st
 import pandas as pd
-
-
 from streamlit_extras.metric_cards import style_metric_cards
 
 
@@ -38,7 +36,7 @@ st.markdown("""
 conn = st.experimental_connection('mysql', type='sql')
 
 
-@st.cache_data_actual(ttl=600)
+@st.cache_data(ttl=3600)
 def ingreso_acum_mes_actual():
     df_acum_mes_actual = conn.query("""
     SELECT
@@ -55,7 +53,7 @@ def ingreso_acum_mes_actual():
     LIMIT 999 """, ttl=600)
     return df_acum_mes_actual
 
-@st.cache_data_anterior(ttl=600)
+@st.cache_data(ttl=3600)
 def ingreso_acum_mes_anterior():
     df_acum_mes_anterior = conn.query("""
     SELECT
@@ -90,19 +88,74 @@ df_acum_mes_ant = ingreso_acum_mes_anterior()
 
 
 df_agrupado = pd.merge(df_acum_mes, df_acum_mes_ant, how='left', left_on=['branch_office', 'Periodo'], right_on=['branch_office', 'Periodo'])
-df_agrupado[['Periodo','Trimestre','branch_office','supervisor','ticket_number','Venta_SSS', 'Ingresos_SSS', 'ticket_anterior', 'ventas_sss_anterior' , 'ingresos_sss_anterior']]
+
+#df_agrupado.head(50)
+#st.dataframe(df_agrupado, height=400)
+
+# Obtener una lista de todas los filtros disponibles
+periodos = df_agrupado['Periodo'].unique()
+#branch_offices = df_agrupado['branch_office'].unique()
+trimestres = df_agrupado['Trimestre'].unique()
+supervisors = df_agrupado['supervisor'].unique()
+
+
+# Configuración del sidebar
+st.sidebar.title('Filtro Disponibles')
+periodos_seleccionados = st.sidebar.multiselect('Seleccione Periodo:', periodos)
+trimestre_seleccionados = st.sidebar.multiselect('Seleccione Trimestres:', trimestres)
+#supervisor_seleccionados = st.sidebar.multiselect('Seleccione Supervisores:', supervisors)
+# Usar st.selectbox para el "supervisor"
+supervisor_seleccionado = st.sidebar.selectbox('Seleccione Supervisor:', supervisors)
+
+
+
+# Filtrar las "branch_office" según el "supervisor" seleccionado
+branch_offices = df_agrupado[df_agrupado['supervisor'] == supervisor_seleccionado]['branch_office'].unique()
+#branch_offices = df_agrupado[df_agrupado['supervisor'] == ([supervisor_seleccionado])]['branch_office'].unique()
+#branch_offices = df_agrupado[df_agrupado['supervisor'].isin([supervisor_seleccionado])]['branch_office'].unique()
+
+# Configuración del sidebar
+branch_office_seleccionadas = st.sidebar.multiselect('Seleccione Sucursales:', branch_offices)
 
 
 
 
+# Filtrar el DataFrame según los filtros seleeccionados
+df_filtrado = df_agrupado[
+    (df_agrupado['Periodo'].isin(periodos_seleccionados)) &
+    (df_agrupado['Trimestre'].isin(trimestre_seleccionados)) &
+    (df_agrupado['supervisor'] == supervisor_seleccionado) &
+    (df_agrupado['branch_office'].isin(branch_office_seleccionadas))
+    
+   
+]
+
+# Agregar mensajes de depuración
+st.write('Debug - Filtros seleccionados:')
+st.write(f"Periodo seleccionados: {periodos_seleccionados}")
+st.write(f"Trimestres seleccionados: {trimestre_seleccionados}")
+st.write(f"Supervisores seleccionados: {supervisor_seleccionado}")
+st.write(f"Sucursales seleccionadas: {branch_office_seleccionadas}")
 
 
+# Mostrar el DataFrame filtrado
+st.write('Datos seleccionados:')
 
 
-df_agrupado.head(50)
-st.dataframe(df_agrupado, height=400)
+# Verificar si se han seleccionado periodo
+if not (periodos_seleccionados or branch_office_seleccionadas or supervisor_seleccionados or trimestre_seleccionados):
+    # Mostrar el DataFrame completo usando st.dataframe
+    st.dataframe(df_agrupado[['Periodo','Trimestre','branch_office','supervisor','ticket_number','Venta_SSS', 'Ingresos_SSS', 'ticket_anterior', 'ventas_sss_anterior' , 'ingresos_sss_anterior']])
+else:
+    # Si se han seleccionado opciones para al menos uno de los filtros, mostrar el DataFrame filtrado
+    st.write('Datos de las opciones seleccionadas:')
+    st.dataframe(df_filtrado, height=400)
 
 
+# Verificar si el DataFrame filtrado está vacío
+if df_filtrado.empty:
+    st.write('No se encontraron resultados con los filtros seleccionados.')
 
+#st.write(df_filtrado)
 
-
+#st.dataframe(df_filtrado, height=400)
