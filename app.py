@@ -46,7 +46,7 @@ df_agrupado = df_agrupado.drop(columns=[ 'id','trimestre_ant', 'period_ant' , 'i
 # Seleccionar las columnas que deseas mostrar en ambos DataFrames
 columns_to_show = ['periodo' , 'branch_office' , 'ticket_number', 'venta_SSS', 'ingresos_SSS', 'ticket_anterior', 'venta_sss_anterior', 'ingresos_sss_anterior']
 
-df_inicial = df_agrupado[columns_to_show]
+df_inicial = (df_agrupado[columns_to_show].set_index('periodo'))
 
 # Obtener una lista de todas los filtros disponibles
 periodos = df_agrupado['periodo'].unique()
@@ -89,9 +89,9 @@ else:
 # Verificar si se han seleccionado opciones para al menos uno de los filtros
 if not (periodos_seleccionados or branch_office_seleccionadas or supervisor_seleccionados or trimestre_seleccionados):
     # Mostrar el DataFrame completo usando st.dataframe
-    st.dataframe(df_agrupado[columns_to_show], height=400)
+    st.dataframe(df_agrupado[columns_to_show].set_index('periodo'), height=400)
 else:
     # Si se han seleccionado opciones para al menos uno de los filtros, mostrar el DataFrame filtrado
     st.write('Datos de las opciones seleccionadas:')
-    st.dataframe(df_filtrado[columns_to_show], height=400)
+    st.dataframe(df_filtrado[columns_to_show].set_index('periodo'), height=400)
 
