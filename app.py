@@ -3,6 +3,7 @@
 import streamlit as st
 import pandas as pd
 
+
 from streamlit_extras.metric_cards import style_metric_cards
 
 
@@ -36,46 +37,40 @@ st.markdown("""
 # Inicializacion de conexion.
 conn = st.experimental_connection('mysql', type='sql')
 
-#def load_data():
-#    df = conn.query('''SELECT * FROM KPI_INGRESOS_ACTUAL WHERE MONTH(KPI_INGRESOS_ACTUAL.fecha) = MONTH(CURDATE()-1)''', ttl=600)
-#    return df
 
+@st.cache_data_actual(ttl=600)
 def ingreso_acum_mes_actual():
     df_acum_mes_actual = conn.query("""
     SELECT
-	KPI_INGRESOS_ACTUAL_MES.Periodo, 
-	KPI_INGRESOS_ACTUAL_MES.period, 
-	KPI_INGRESOS_ACTUAL_MES.Trimestre, 
-	KPI_INGRESOS_ACTUAL_MES.`Año`, 
-	KPI_INGRESOS_ACTUAL_MES.branch_office, 
-	KPI_INGRESOS_ACTUAL_MES.supervisor, 
-	KPI_INGRESOS_ACTUAL_MES.ticket_number, 
-	KPI_INGRESOS_ACTUAL_MES.Venta_SSS, 
-	KPI_INGRESOS_ACTUAL_MES.Ingresos_SSS
-FROM
-	KPI_INGRESOS_ACTUAL_MES
-  LIMIT 10
-    
-    """, ttl=600)
+	  KPI_INGRESOS_ACTUAL_MES.Periodo, 
+	  KPI_INGRESOS_ACTUAL_MES.period, 
+	  KPI_INGRESOS_ACTUAL_MES.Trimestre, 
+	  KPI_INGRESOS_ACTUAL_MES.`Año`, 
+	  KPI_INGRESOS_ACTUAL_MES.branch_office, 
+	  KPI_INGRESOS_ACTUAL_MES.supervisor, 
+	  KPI_INGRESOS_ACTUAL_MES.ticket_number, 
+	  KPI_INGRESOS_ACTUAL_MES.Venta_SSS, 
+	  KPI_INGRESOS_ACTUAL_MES.Ingresos_SSS
+    FROM 	KPI_INGRESOS_ACTUAL_MES
+    LIMIT 999 """, ttl=600)
     return df_acum_mes_actual
 
+@st.cache_data_anterior(ttl=600)
 def ingreso_acum_mes_anterior():
     df_acum_mes_anterior = conn.query("""
     SELECT
-	KPI_INGRESOS_ANTERIOR_MES.Periodo, 
-	#KPI_INGRESOS_ANTERIOR_MES.period, 
-	#KPI_INGRESOS_ANTERIOR_MES.Trimestre, 
-	KPI_INGRESOS_ANTERIOR_MES.`Año`, 
-	KPI_INGRESOS_ANTERIOR_MES.branch_office, 
-	#KPI_INGRESOS_ANTERIOR_MES.supervisor, 
-	KPI_INGRESOS_ANTERIOR_MES.ticket_number as ticket_anterior, 
-	KPI_INGRESOS_ANTERIOR_MES.Venta_SSS as ventas_sss_anterior, 
-	KPI_INGRESOS_ANTERIOR_MES.Ingresos_SSS as ingresos_sss_anterior
-FROM
-	KPI_INGRESOS_ANTERIOR_MES
-  LIMIT 10
-    
-    """, ttl=600)
+	  KPI_INGRESOS_ANTERIOR_MES.Periodo, 
+	  #KPI_INGRESOS_ANTERIOR_MES.period, 
+	  #KPI_INGRESOS_ANTERIOR_MES.Trimestre, 
+	  KPI_INGRESOS_ANTERIOR_MES.`Año`, 
+	  KPI_INGRESOS_ANTERIOR_MES.branch_office, 
+	  #KPI_INGRESOS_ANTERIOR_MES.supervisor, 
+	  KPI_INGRESOS_ANTERIOR_MES.ticket_number as ticket_anterior, 
+	  KPI_INGRESOS_ANTERIOR_MES.Venta_SSS as ventas_sss_anterior, 
+	  KPI_INGRESOS_ANTERIOR_MES.Ingresos_SSS as ingresos_sss_anterior
+    FROM
+	  KPI_INGRESOS_ANTERIOR_MES
+    LIMIT 999""", ttl=600)
     return df_acum_mes_anterior
 
 st.title("Indicadores JIS Parking")
@@ -87,9 +82,6 @@ col3.metric(label="No Change", value=5000, delta=0)
 style_metric_cards()
 
 
-#df = load_data()
-#st.dataframe(df, height=200)
-
 df_acum_mes = ingreso_acum_mes_actual()
 #st.dataframe(df_acum_mes, height=400)
 
@@ -97,30 +89,18 @@ df_acum_mes_ant = ingreso_acum_mes_anterior()
 #st.dataframe(df_acum_mes_ant, height=400)
 
 
-#st.dataframe(df_acum_mes.head(5))
-
-#st.dataframe(df_acum_mes_ant.head(5))
-
-
-
 df_agrupado = pd.merge(df_acum_mes, df_acum_mes_ant, how='left', left_on=['branch_office', 'Periodo'], right_on=['branch_office', 'Periodo'])
 df_agrupado[['Periodo','Trimestre','branch_office','supervisor','ticket_number','Venta_SSS', 'Ingresos_SSS', 'ticket_anterior', 'ventas_sss_anterior' , 'ingresos_sss_anterior']]
 
 
-## Obtén la lista de países
-Periodo = df_agrupado['Periodo'].unique()
- 
-## Crea la caja de selección
-selected_periodo = st.selectbox('Elige un periodo:', Periodo)
- 
-## Filtra los datos
-filtered_data = df_agrupado[df_agrupado['Periodo'] == selected_periodo]
+
+
 
 
 
 
 df_agrupado.head(50)
-#st.dataframe(df_agrupado, height=400)
+st.dataframe(df_agrupado, height=400)
 
 
 
