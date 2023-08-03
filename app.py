@@ -3,11 +3,12 @@
 import streamlit as st
 import pandas as pd
 from streamlit_extras.metric_cards import style_metric_cards
+from streamlit_extras.dataframe_explorer import dataframe_explorer
+
 
 
 # Inicializacion de conexion.
 conn = st.experimental_connection('mysql', type='sql')
-
 
 @st.cache_data(ttl=3600)
 def ingreso_acum_mes_actual():
@@ -40,13 +41,28 @@ df_acum_mes_ant = df_acum_mes_ant.rename(columns={'ingresos_SSS':'ingresos_sss_a
 df_agrupado = pd.merge(df_acum_mes, df_acum_mes_ant, how='left', left_on=['branch_office', 'periodo'],
                        right_on=['branch_office', 'periodo'], suffixes=('', '_ant'))
 
+
 # Eliminar las columnas del DataFrame df_acum_mes_ant que se duplicaron en la fusión
 df_agrupado = df_agrupado.drop(columns=[ 'id','trimestre_ant', 'period_ant' , 'id_ant', 'año_ant' , 'supervisor_ant'])
 
+
+# Calcular las nuevas columnas y agregarlas al DataFrame df_agrupado
+df_agrupado['var% SSS'] = (df_agrupado['ingresos_SSS'] / df_agrupado['ingresos_sss_anterior'] - 1) * 100
+df_agrupado['var Q'] = (df_agrupado['ticket_number'] / df_agrupado['ticket_anterior'] - 1) * 100
+df_agrupado['ticket prom act'] = (df_agrupado['ingresos_SSS'] / df_agrupado['ticket_number']).round(0)
+
+# Formatear la columna "var% SSS" con dos decimales y agregar el símbolo "%" y aplicar estilo de color rojo cuando el valor es menor a 0
+df_agrupado['var% SSS'] = df_agrupado['var% SSS'].apply(lambda x: f"{x:.2f}%" if x >= 0 else f"{x:.2f}")
+df_agrupado['var Q'] = df_agrupado['var Q'].apply(lambda x: f"{x:.2f}%" if x >= 0 else f"{x:.2f}")
+
+
 # Seleccionar las columnas que deseas mostrar en ambos DataFrames
-columns_to_show = ['periodo' , 'branch_office' , 'ticket_number', 'venta_SSS', 'ingresos_SSS', 'ticket_anterior', 'venta_sss_anterior', 'ingresos_sss_anterior']
+columns_to_show = ['periodo' , 'branch_office' , 'ticket_number', 'venta_SSS', 'ingresos_SSS', 'ticket_anterior', 'venta_sss_anterior', 'ingresos_sss_anterior', 'var% SSS', 'var Q', 'ticket prom act']
 
 df_inicial = (df_agrupado[columns_to_show].set_index('periodo'))
+
+# Calcular la suma de la columna "ingresos_SSS" en el DataFrame filtrado
+ingresos_suma = df_inicial['ingresos_SSS'].sum()
 
 # Obtener una lista de todas los filtros disponibles
 periodos = df_agrupado['periodo'].unique()
@@ -89,9 +105,13 @@ else:
 # Verificar si se han seleccionado opciones para al menos uno de los filtros
 if not (periodos_seleccionados or branch_office_seleccionadas or supervisor_seleccionados or trimestre_seleccionados):
     # Mostrar el DataFrame completo usando st.dataframe
-    st.dataframe(df_agrupado[columns_to_show].set_index('periodo'), height=400)
+    st.dataframe(df_agrupado[columns_to_show].set_index('periodo'),use_container_width=True, height=300)
 else:
     # Si se han seleccionado opciones para al menos uno de los filtros, mostrar el DataFrame filtrado
     st.write('Datos de las opciones seleccionadas:')
-    st.dataframe(df_filtrado[columns_to_show].set_index('periodo'), height=400)
+    st.dataframe(df_filtrado[columns_to_show].set_index('periodo'),use_container_width=True, height=300)
+
+
+
+
 
