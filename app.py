@@ -4,10 +4,12 @@ import streamlit as st
 import pandas as pd
 import locale
 
+
+
 # Inicializacion de conexion.
 conn = st.experimental_connection('mysql', type='sql')
 
-st.title("Indicadores JIS Parking")
+
 
 @st.cache_data(ttl=3600)
 def ingreso_acum_mes_actual():
@@ -142,11 +144,19 @@ ingresos_ant_sum_formatted = format_currency(ingresos_ant_sum)
 var_sss_formatted = format_percentage(var_sss)
 
 
+# Título principal
+# Título principal con formato HTML
+st.markdown("""
+    <div class="mx-10 mt-5">
+        <h1 class="text-6xl ">Indicadores JIS Parking</h1>
+    </div>
+""", unsafe_allow_html=True)
+
 
 # Contenido de la primera tarjeta "Ingresos Actual"
-with st.container():
-    col1, col2, col3 = st.columns(3)
 
+col1, col2, col3 = st.columns(3)
+    
 with col1:
     st.markdown(f"""
     <link href="https://unpkg.com/tailwindcss@2.2.4/dist/tailwind.min.css" rel="stylesheet">
@@ -169,8 +179,8 @@ with col1:
 """, unsafe_allow_html=True)
 
 # Contenido de la segunda tarjeta "Ingresos Anterior"
-with col2:
-    st.markdown(f"""
+    with col2:
+        st.markdown(f"""
     <link href="https://unpkg.com/tailwindcss@2.2.4/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://demos.creative-tim.com/notus-js/assets/vendor/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
        <div class="px-1 pt-4 pb5">
@@ -191,8 +201,8 @@ with col2:
 """, unsafe_allow_html=True)
 
 # Contenido de la tercera tarjeta "Var SSS"
-with col3:
-    st.markdown(f"""
+    with col3:
+        st.markdown(f"""
     <link href="https://unpkg.com/tailwindcss@2.2.4/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://demos.creative-tim.com/notus-js/assets/vendor/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
         <div class="px-1 pt-4 pb5">
