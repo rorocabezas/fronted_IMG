@@ -3,21 +3,16 @@
 import streamlit as st
 import pandas as pd
 import locale
-from streamlit_extras.metric_cards import style_metric_cards
-from streamlit_extras.dataframe_explorer import dataframe_explorer
-
-
 
 # Inicializacion de conexion.
 conn = st.experimental_connection('mysql', type='sql')
+
+st.title("Indicadores JIS Parking")
 
 @st.cache_data(ttl=3600)
 def ingreso_acum_mes_actual():
     df_acum_mes_actual = conn.query("select * from KPI_INGRESOS_MES", ttl=600)
     return df_acum_mes_actual
-
-st.title("Indicadores JIS Parking")
-
 
 # Número de filas por página
 rows_per_page = 20
@@ -148,33 +143,74 @@ var_sss_formatted = format_percentage(var_sss)
 
 
 
-
+# Contenido de la primera tarjeta "Ingresos Actual"
 with st.container():
-    # Convertir la variable ingresos_act_sum a formato de moneda
     col1, col2, col3 = st.columns(3)
-    # Convertir la variable ingresos_act_sum a formato de moneda
-    data_ingresos_value = ingresos_act_sum  # Obtener el valor numérico sin formato
-    data_ingresos_label = f"{ingresos_act_sum_formatted}"  # Solo el valor numérico sin las etiquetas HTML
 
-    # Utilizar st.metric() para mostrar el valor numérico
-    col1.metric(label="Ingresos Actual", value=data_ingresos_value)
+with col1:
+    st.markdown(f"""
+    <link href="https://unpkg.com/tailwindcss@2.2.4/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://demos.creative-tim.com/notus-js/assets/vendor/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+         <div class="px-1 pt-4 pb5">
+            <!---== primero     Stats Container ====--->
+            <div class="flex flex-col xl:flex-row shadow hover:shadow-md w-full bg-white rounded-lg overflow-hidden cursor-pointer">
+                <div class="w-72 bg-white max-w-xs mx-auto rounded-sm overflow-hidden shadow-lg hover:shadow-2xl transition duration-500 transform hover:scale-100 cursor-pointer">
+                    <div class="h-20 bg-green-400 flex items-center justify-between">
+                        <p class="mr-0 text-white text-lg pl-5">INGRESOS ACTUAL</p>
+                    </div>
+                <div class="flex justify-between px-5 pt-6 mb-2 text-sm text-gray-600">
+                <p>Venta Neta + Abonados</p>
+            </div>
+                <p class="py-4 text-3xl ml-5">{ingresos_act_sum_formatted}</p>
+                <!-- <hr > -->
+        </div>
+    </div>   
+</div>
+""", unsafe_allow_html=True)
 
-    # Utilizar st.markdown() para aplicar el formato personalizado a la etiqueta
-    #col1.markdown(data_ingresos_label, unsafe_allow_html=True)
+# Contenido de la segunda tarjeta "Ingresos Anterior"
+with col2:
+    st.markdown(f"""
+    <link href="https://unpkg.com/tailwindcss@2.2.4/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://demos.creative-tim.com/notus-js/assets/vendor/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+       <div class="px-1 pt-4 pb5">
+            <!---== Segunda   Stats Container ====--->
+            <div class="flex flex-col xl:flex-row shadow hover:shadow-md w-full bg-white rounded-lg overflow-hidden cursor-pointer">
+                <div class="w-72 bg-white max-w-xs mx-auto rounded-sm overflow-hidden shadow-lg hover:shadow-2xl transition duration-500 transform hover:scale-100 cursor-pointer">
+                    <div class="h-20 bg-red-400 flex items-center justify-between">
+                        <p class="mr-0 text-white text-lg pl-5">INGRESOS ANTERIOR</p>
+                    </div>
+                <div class="flex justify-between px-5 pt-6 mb-2 text-sm text-gray-600">
+                <p>Venta Neta + Abonados</p>
+            </div>
+                <p class="py-4 text-3xl ml-5">{ingresos_ant_sum_formatted}</p>
+                <!-- <hr > -->
+        </div>
+    </div>   
+</div>
+""", unsafe_allow_html=True)
 
-    
-    data_ingresos_ant = f"{ingresos_ant_sum_formatted}"
-    #st.markdown(data_ingresos, unsafe_allow_html=True)
-    #col1.metric(label="ingresos act", value=data_ingresos, unsafe_allow_html=True)
-    col2.metric(label="ingresos ant", value=data_ingresos_ant)
-    col3.metric(label="Var % ", value=var_sss_formatted)
-    style_metric_cards()
-    
-
-
-#Volumes = 25
-#Subheader_VolumesKPI = f"<p style='font-family: Arial; color: black; font-size: 25px;'>{Volumes}</p>"
-#st.markdown(Subheader_VolumesKPI, unsafe_allow_html=True)
+# Contenido de la tercera tarjeta "Var SSS"
+with col3:
+    st.markdown(f"""
+    <link href="https://unpkg.com/tailwindcss@2.2.4/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://demos.creative-tim.com/notus-js/assets/vendor/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
+        <div class="px-1 pt-4 pb5">
+            <!---== Tercera Stats Container ====--->
+            <div class="flex flex-col xl:flex-row shadow hover:shadow-md w-full bg-white rounded-lg overflow-hidden cursor-pointer">
+                <div class="w-72 bg-white max-w-xs mx-auto rounded-sm overflow-hidden shadow-lg hover:shadow-2xl transition duration-500 transform hover:scale-100 cursor-pointer">
+                    <div class="h-20 bg-blue-400 flex items-center justify-between">
+                        <p class="mr-0 text-white text-lg pl-5">VARIACION % SSS</p>
+                    </div>
+                <div class="flex justify-between px-5 pt-6 mb-2 text-sm text-gray-600">
+                <p>Same Store Sale</p>
+            </div>
+                <p class="py-4 text-3xl ml-5">{var_sss_formatted}</p>
+                <!-- <hr > -->
+        </div>
+    </div>   
+</div>
+""", unsafe_allow_html=True)
 
 
 #col1.hasClicked = card(
@@ -182,7 +218,6 @@ with st.container():
 #    text=ingresos_act_sum_formatted,
 #    image=""
 #    )
-
 
 # Verificar si se han seleccionado opciones para al menos uno de los filtros
 with st.container():
