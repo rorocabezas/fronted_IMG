@@ -1,14 +1,10 @@
-# Importaciones
-
 import streamlit as st
 import pandas as pd
 import locale
-
-
+import plotly.express as px
 
 # Inicializacion de conexion.
 conn = st.experimental_connection('mysql', type='sql')
-
 
 
 @st.cache_data(ttl=3600)
@@ -17,7 +13,7 @@ def ingreso_acum_mes_actual():
     return df_acum_mes_actual
 
 # Número de filas por página
-rows_per_page = 20
+rows_per_page = 50
 
 # Función para mostrar el DataFrame con paginación
 def show_dataframe_with_pagination(df):
@@ -29,16 +25,52 @@ def show_dataframe_with_pagination(df):
     start_idx = (page_number - 1) * rows_per_page
     end_idx = min(start_idx + rows_per_page, total_rows)
 
-    st.dataframe(df[start_idx:end_idx], use_container_width=True)
+    st.dataframe(df[start_idx:end_idx], use_container_width=True, height=400)
 
 df_total = ingreso_acum_mes_actual()
 
+def calcular_variacion(df, columna_actual, columna_anterior):
+    # Calcula la variación porcentual entre dos columnas de un DataFrame
+    variacion = (df[columna_actual] / df[columna_anterior] - 1) * 100
+    # Formatea la variación con dos decimales y agrega el símbolo "%"
+    variacion = variacion.apply(lambda x: f"{x:.2f}%" if x >= 0 else f"{x:.2f}")
+    return variacion
+
+def calcular_ticket_promedio(df, columna_ingresos, columna_tickets):
+    # Calcula el ticket promedio entre dos columnas de un DataFrame
+    ticket_promedio = (df[columna_ingresos] / df[columna_tickets]).round(0)
+    return ticket_promedio
+
+
+# Diccionario con los nombres originales y los nuevos nombres de las columnas de ingresos
+columnas_ingresos = {
+    'venta_SSS': 'ventas act',
+    'venta_sss_anterior': 'ventas ant',
+    'ingresos_SSS': 'ingresos act',
+    'ingresos_sss_anterior': 'ingresos ant'
+}
+
+# Diccionario con los nombres originales y los nuevos nombres de las columnas de tickets
+columnas_tickets = {
+    'ticket_number': 'ticket act',
+    'ticket_anterior': 'ticket ant'
+}
+
+# Diccionario con los nombres originales y los nuevos nombres de las columnas de variación
+columnas_variacion = {
+    'var% SSS': 'var SSS',
+    'var Q': 'var Q'
+}
+
+# Diccionario con los nombres originales y los nuevos nombres de las columnas de ticket promedio
+columnas_ticket_promedio = {
+    'ticket prom act': 'ticket prom act'
+}
+
 # Crear el DataFrame df_acum_mes con el filtro para el año 2023
 df_acum_mes = df_total[df_total['año'] == 2023]
-
 # Crear el DataFrame df_acum_mes_ant con el filtro para el año 2022
 df_acum_mes_ant = df_total[df_total['año'] == 2022]
-
 
 df_acum_mes_ant = df_acum_mes_ant.rename(columns={'ingresos_SSS':'ingresos_sss_anterior',
                                    'venta_SSS':'venta_sss_anterior',
@@ -49,70 +81,48 @@ df_acum_mes_ant = df_acum_mes_ant.rename(columns={'ingresos_SSS':'ingresos_sss_a
 df_agrupado = pd.merge(df_acum_mes, df_acum_mes_ant, how='left', left_on=['branch_office', 'periodo'],
                        right_on=['branch_office', 'periodo'], suffixes=('', '_ant'))
 
-
 # Eliminar las columnas del DataFrame df_acum_mes_ant que se duplicaron en la fusión
 df_agrupado = df_agrupado.drop(columns=[ 'id','trimestre_ant', 'period_ant' , 'id_ant', 'año_ant' , 'supervisor_ant'])
 
-
-# Calcular las nuevas columnas y agregarlas al DataFrame df_agrupado
-df_agrupado['var% SSS'] = (df_agrupado['ingresos_SSS'] / df_agrupado['ingresos_sss_anterior'] - 1) * 100
-df_agrupado['var Q'] = (df_agrupado['ticket_number'] / df_agrupado['ticket_anterior'] - 1) * 100
-df_agrupado['ticket prom act'] = (df_agrupado['ingresos_SSS'] / df_agrupado['ticket_number']).round(0)
-
-# Formatear la columna "var% SSS" con dos decimales y agregar el símbolo "%" y aplicar estilo de color rojo cuando el valor es menor a 0
-df_agrupado['var% SSS'] = df_agrupado['var% SSS'].apply(lambda x: f"{x:.2f}%" if x >= 0 else f"{x:.2f}")
-df_agrupado['var Q'] = df_agrupado['var Q'].apply(lambda x: f"{x:.2f}%" if x >= 0 else f"{x:.2f}")
-
+# Usar las funciones definidas para crear las nuevas columnas del DataFrame df_agrupado
+df_agrupado = df_agrupado.assign(
+    var_SSS = calcular_variacion(df_agrupado, 'ingresos_SSS', 'ingresos_sss_anterior'),
+    var_Q = calcular_variacion(df_agrupado, 'ticket_number', 'ticket_anterior'),
+    ticket_prom_act = calcular_ticket_promedio(df_agrupado, 'ingresos_SSS', 'ticket_number')
+)
 
 df_agrupado = df_agrupado.rename(columns={
     'periodo': 'periodo',
-    'branch_office': 'sucursal',
-    'ticket_number': 'ticket act',
+    'branch_office': 'sucursal',    
     'venta_SSS': 'ventas act',
-    'ingresos_SSS': 'ingresos act',
-    'ticket_anterior': 'ticket ant',
     'venta_sss_anterior': 'ventas ant',
-    'ingresos_sss_anterior': 'ingresos ant'
-})
+    'ingresos_SSS': 'ingresos act',
+    'ingresos_sss_anterior': 'ingresos ant',
+    'ticket_number': 'ticket act',
+    'ticket_anterior': 'ticket ant'  
+    })
+
+##segunda parte
 
 # Seleccionar las columnas que deseas mostrar en ambos DataFrames
-columns_to_show = ['periodo' , 'sucursal' , 'ticket act', 'ventas act', 'ingresos act', 'ticket ant', 'ventas ant', 'ingresos ant', 'var% SSS', 'var Q', 'ticket prom act']
-
-# Seleccionar las columnas que deseas mostrar en ambos DataFrames
-#columns_to_show = ['periodo' , 'branch_office' , 'ticket_number', 'venta_SSS', 'ingresos_SSS', 'ticket_anterior', 'venta_sss_anterior', 'ingresos_sss_anterior', 'var% SSS', 'var Q', 'ticket prom act']
+columns_to_show = ['periodo' , 'sucursal' , 'ventas act', 'ventas ant',  'ingresos act', 'ingresos ant',  'ticket act' ,  'ticket ant',  'var_SSS', 'var_Q', 'ticket_prom_act']
 
 # Ahora puedes usar la lista actualizada para seleccionar las columnas del DataFrame
 df_inicial = df_agrupado[columns_to_show].set_index('periodo')
 
+st.sidebar.title('Filtros Disponibles')
 # Obtener una lista de todas los filtros disponibles
 periodos = df_agrupado['periodo'].unique()
-trimestres = df_agrupado['trimestre'].unique()
 supervisors = df_agrupado['supervisor'].unique()
-
-st.sidebar.title('Filtros Disponibles')
-#periodos_seleccionados = st.sidebar.multiselect('Seleccione Periodo:', periodos)
-
 supervisor_seleccionados = st.sidebar.multiselect('Seleccione Supervisores:', supervisors)
-
-# Filtrar las "branch_office" según el "supervisor" seleccionado
 branch_offices = df_agrupado[df_agrupado['supervisor'].isin(supervisor_seleccionados)]['sucursal'].unique()
-
-# Configuración del sidebar branch offices
 branch_office_seleccionadas = st.sidebar.multiselect('Seleccione Sucursales:', branch_offices)
-
-trimestre_seleccionados = st.sidebar.multiselect('Seleccione Trimestres:', trimestres)
-
-# Filtrar los "periodo" según el "trimestre" seleccionado
-periodos_disponibles = df_agrupado[df_agrupado['trimestre'].isin(trimestre_seleccionados)]['periodo'].unique()
-
-# Configuración del sidebar periodo
-periodos_seleccionados = st.sidebar.multiselect('Seleccione Periodo:', periodos_disponibles)
+periodos_seleccionados = st.sidebar.multiselect('Seleccione Periodo:', periodos)
 
 # Filtrar el DataFrame según los filtros seleccionados
-if periodos_seleccionados or branch_office_seleccionadas or supervisor_seleccionados or trimestre_seleccionados:
+if periodos_seleccionados or branch_office_seleccionadas or supervisor_seleccionados:
     df_filtrado = df_agrupado[
         (df_agrupado['periodo'].isin(periodos_seleccionados) if periodos_seleccionados else True) &
-        (df_agrupado['trimestre'].isin(trimestre_seleccionados) if trimestre_seleccionados else True) &
         (df_agrupado['supervisor'].isin(supervisor_seleccionados) if supervisor_seleccionados else True) &
         (df_agrupado['sucursal'].isin(branch_office_seleccionadas) if branch_office_seleccionadas else True)
     ]
@@ -121,6 +131,25 @@ else:
 
 # Creamos un DataFrame agrupado con la sumatoria total de cada columna de df_filtrado
 sum_df_filtrado = df_filtrado.sum()
+
+# Verificar si la columna 'periodo' está presente en df_filtrado antes de realizar la agrupación
+if 'periodo' in df_filtrado.columns:
+    df_group_mes = df_filtrado.groupby('periodo')[['ingresos act', 'ingresos ant']].sum().reset_index()
+else:
+    df_group_mes = df_inicial.groupby('periodo')[['ingresos act', 'ingresos ant']].sum().reset_index()
+
+# Mostrar el DataFrame df_group_mes
+#cst.dataframe(df_group_mes)
+
+
+# Crear el gráfico de barras utilizando plotly
+fig = px.histogram(df_group_mes, x="periodo", y=["ingresos act", "ingresos ant"],
+             color="variable", barmode="group",
+             height=400)
+#fig.show()
+
+st.plotly_chart(fig)
+     
 
 # Función para formatear un número como moneda con símbolo de dólar y separadores de miles
 def format_currency(value):
@@ -143,8 +172,6 @@ ingresos_act_sum_formatted = format_currency(ingresos_act_sum)
 ingresos_ant_sum_formatted = format_currency(ingresos_ant_sum)
 var_sss_formatted = format_percentage(var_sss)
 
-
-# Título principal
 # Título principal con formato HTML
 st.markdown("""
     <div class="mx-10 mt-5">
@@ -153,15 +180,17 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# Contenido de la primera tarjeta "Ingresos Actual"
 
-col1, col2, col3 = st.columns(3)
-    
-with col1:
+# Crear un contenedor principal con un ancho máximo de 1200px y un margen automático
+with st.container():
     st.markdown(f"""
     <link href="https://unpkg.com/tailwindcss@2.2.4/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://demos.creative-tim.com/notus-js/assets/vendor/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
-         <div class="px-1 pt-4 pb5">
+         """, unsafe_allow_html=True)
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"""
+        <div class="flex flex-col items-center justify-center px-1 pt-4 pb5">
             <!---== primero     Stats Container ====--->
             <div class="flex flex-col xl:flex-row shadow hover:shadow-md w-full bg-white rounded-lg overflow-hidden cursor-pointer">
                 <div class="w-72 bg-white max-w-xs mx-auto rounded-sm overflow-hidden shadow-lg hover:shadow-2xl transition duration-500 transform hover:scale-100 cursor-pointer">
@@ -172,18 +201,15 @@ with col1:
                 <p>Venta Neta + Abonados</p>
             </div>
                 <p class="py-4 text-3xl ml-5">{ingresos_act_sum_formatted}</p>
-                <!-- <hr > -->
-        </div>
+         </div>
     </div>   
 </div>
 """, unsafe_allow_html=True)
 
 # Contenido de la segunda tarjeta "Ingresos Anterior"
     with col2:
-        st.markdown(f"""
-    <link href="https://unpkg.com/tailwindcss@2.2.4/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://demos.creative-tim.com/notus-js/assets/vendor/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
-       <div class="px-1 pt-4 pb5">
+        st.markdown(f"""    
+       <div class="flex flex-col items-center justify-center px-1 pt-4 pb5">
             <!---== Segunda   Stats Container ====--->
             <div class="flex flex-col xl:flex-row shadow hover:shadow-md w-full bg-white rounded-lg overflow-hidden cursor-pointer">
                 <div class="w-72 bg-white max-w-xs mx-auto rounded-sm overflow-hidden shadow-lg hover:shadow-2xl transition duration-500 transform hover:scale-100 cursor-pointer">
@@ -194,7 +220,6 @@ with col1:
                 <p>Venta Neta + Abonados</p>
             </div>
                 <p class="py-4 text-3xl ml-5">{ingresos_ant_sum_formatted}</p>
-                <!-- <hr > -->
         </div>
     </div>   
 </div>
@@ -202,10 +227,8 @@ with col1:
 
 # Contenido de la tercera tarjeta "Var SSS"
     with col3:
-        st.markdown(f"""
-    <link href="https://unpkg.com/tailwindcss@2.2.4/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://demos.creative-tim.com/notus-js/assets/vendor/@fortawesome/fontawesome-free/css/all.min.css" rel="stylesheet">
-        <div class="px-1 pt-4 pb5">
+        st.markdown(f"""    
+        <div class="flex flex-col items-center justify-center px-1 pt-4 pb5">
             <!---== Tercera Stats Container ====--->
             <div class="flex flex-col xl:flex-row shadow hover:shadow-md w-full bg-white rounded-lg overflow-hidden cursor-pointer">
                 <div class="w-72 bg-white max-w-xs mx-auto rounded-sm overflow-hidden shadow-lg hover:shadow-2xl transition duration-500 transform hover:scale-100 cursor-pointer">
@@ -216,28 +239,19 @@ with col1:
                 <p>Same Store Sale</p>
             </div>
                 <p class="py-4 text-3xl ml-5">{var_sss_formatted}</p>
-                <!-- <hr > -->
         </div>
     </div>   
 </div>
 """, unsafe_allow_html=True)
 
-
-#col1.hasClicked = card(
-#    title="Ingresos Totales",
-#    text=ingresos_act_sum_formatted,
-#    image=""
-#    )
+st.write('Selección de datos:')
 
 # Verificar si se han seleccionado opciones para al menos uno de los filtros
 with st.container():
-    if not (periodos_seleccionados or branch_office_seleccionadas or supervisor_seleccionados or trimestre_seleccionados):
-        st.write('Datos sin selección:')
+    if not (periodos_seleccionados or branch_office_seleccionadas or supervisor_seleccionados):
         show_dataframe_with_pagination(df_agrupado[columns_to_show].set_index('periodo'))
-        # Si se han seleccionado opciones para al menos uno de los filtros, mostrar el DataFrame filtrado
+        
     else:
-        st.write('Datos de las opciones seleccionadas:')
-        #st.dataframe(df_filtrado[columns_to_show].set_index('periodo'),use_container_width=True, height=300)
         show_dataframe_with_pagination(df_filtrado[columns_to_show].set_index('periodo'))
 
 
