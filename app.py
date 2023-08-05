@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import locale
 import plotly.express as px
+import plotly.graph_objects as go
+
 
 # Inicializacion de conexion.
 conn = st.experimental_connection('mysql', type='sql')
@@ -141,15 +143,38 @@ else:
 # Mostrar el DataFrame df_group_mes
 #cst.dataframe(df_group_mes)
 
+# Crear una nueva columna "var_sss" en el DataFrame
+#df_group_mes["var_sss"] = (df_group_mes["ingresos act"] / df_group_mes["ingresos ant"])-1
 
-# Crear el gráfico de barras utilizando plotly
-fig = px.histogram(df_group_mes, x="periodo", y=["ingresos act", "ingresos ant"],
-             color="variable", barmode="group",
-             height=400)
-#fig.show()
+# Calcular la variación "var_sss" utilizando la función calcular_variacion
+df_group_mes["var_sss"] = calcular_variacion(df_group_mes, "ingresos act", "ingresos ant")
 
-st.plotly_chart(fig)
-     
+# Crear el gráfico con subplots
+fig_combined = go.Figure()
+
+# Agregar las barras al gráfico principal
+fig_combined.add_trace(go.Bar(x=df_group_mes["periodo"], y=df_group_mes["ingresos act"],
+                              name="Ingresos Actuales", marker_color="blue", yaxis="y1"))
+fig_combined.add_trace(go.Bar(x=df_group_mes["periodo"], y=df_group_mes["ingresos ant"],
+                              name="Ingresos Anteriores", marker_color="orange", yaxis="y1"))
+
+# Agregar la línea al gráfico secundario
+fig_combined.add_trace(go.Scatter(x=df_group_mes["periodo"], y=df_group_mes["var_sss"],
+                                  mode="lines+markers", name="Var SSS", line=dict(color="red"), yaxis="y2"))
+
+# Ajustar las propiedades del eje primario (y1)
+fig_combined.update_layout(yaxis=dict(title="Ingresos", showgrid=True, zeroline=True))
+
+# Ajustar las propiedades del eje secundario (y2)
+fig_combined.update_layout(yaxis2=dict(title="Var SSS", showgrid=False, zeroline=False, overlaying="y", side="right"))
+
+# Mover la leyenda debajo del eje x y centrada
+fig_combined.update_layout(legend=dict(orientation="h", yanchor="bottom", y=-0.2, xanchor="center", x=0.5))
+
+# Mostrar el gráfico utilizando Streamlit
+st.plotly_chart(fig_combined)
+
+
 
 # Función para formatear un número como moneda con símbolo de dólar y separadores de miles
 def format_currency(value):
