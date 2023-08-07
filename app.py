@@ -156,11 +156,11 @@ fig_combined = go.Figure()
 fig_combined.add_trace(go.Bar(x=df_group_mes["periodo"], y=df_group_mes["ingresos act"],
                               name="Ingresos Actuales", marker_color="blue", yaxis="y1"))
 fig_combined.add_trace(go.Bar(x=df_group_mes["periodo"], y=df_group_mes["ingresos ant"],
-                              name="Ingresos Anteriores", marker_color="orange", yaxis="y1"))
+                              name="Ingresos Anteriores", marker_color="LightSkyBlue", yaxis="y1"))
 
 # Agregar la línea al gráfico secundario
 fig_combined.add_trace(go.Scatter(x=df_group_mes["periodo"], y=df_group_mes["var_sss"],
-                                  mode="lines+markers", name="Var SSS", line=dict(color="red"), yaxis="y2"))
+                                  mode="lines+markers", name="Var SSS", line=dict(width=5,color="red"), marker=dict(size=4, symbol="circle"), yaxis="y2"))
 
 # Ajustar las propiedades del eje primario (y1)
 fig_combined.update_layout(yaxis=dict(title="Ingresos", showgrid=True, zeroline=True))
@@ -174,7 +174,7 @@ fig_combined.update_layout(legend=dict(orientation="h", yanchor="bottom", y=-0.2
 # Mostrar el gráfico utilizando Streamlit
 st.plotly_chart(fig_combined)
 
-
+st.markdown("""---""")
 
 # Función para formatear un número como moneda con símbolo de dólar y separadores de miles
 def format_currency(value):
@@ -197,14 +197,13 @@ ingresos_act_sum_formatted = format_currency(ingresos_act_sum)
 ingresos_ant_sum_formatted = format_currency(ingresos_ant_sum)
 var_sss_formatted = format_percentage(var_sss)
 
+
 # Título principal con formato HTML
 st.markdown("""
     <div class="mx-10 mt-5">
         <h1 class="text-6xl ">Indicadores JIS Parking</h1>
     </div>
 """, unsafe_allow_html=True)
-
-
 
 # Crear un contenedor principal con un ancho máximo de 1200px y un margen automático
 with st.container():
@@ -268,6 +267,8 @@ with st.container():
     </div>   
 </div>
 """, unsafe_allow_html=True)
+
+st.markdown("""---""")
 
 st.write('Selección de datos:')
 
