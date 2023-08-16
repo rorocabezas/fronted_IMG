@@ -3,7 +3,6 @@ from streamlit_option_menu import option_menu
 from rrhh import show_rrhh_page
 from ingresos import show_ingresos_page
 from eerr import show_eerr_page
-
 st.set_page_config(layout="wide")
 
 def streamlit_menu():
