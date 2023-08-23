@@ -2,8 +2,14 @@ import streamlit as st
 from streamlit_option_menu import option_menu
 from rrhh import show_rrhh_page
 from ingresos import show_ingresos_page
-from eerr import show_eerr_page
-st.set_page_config(layout="wide")
+from resultado import show_eerr_page
+
+#st.set_page_config(layout="wide")
+st.set_page_config(
+    page_title="Indicadores JIS",
+    page_icon="😎",
+    layout="wide"
+)
 
 def streamlit_menu():
     selected = option_menu(
