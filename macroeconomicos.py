@@ -79,7 +79,7 @@ with container: #1- INDICADORES MACROECONÓMICOS
             marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
             texttemplate="%{text}",
             textposition="bottom center",
-            text=[f'<span style="color: black;"><b>{value}</b></span>' for value in data_2022["var"]]
+            text=[f'<span style="color: #3C2317;"><b>{value}</b></span>' for value in data_2022["var"]]
         ).data[0])
     data_2023 = pivot_df[pivot_df['año'] == 2023]
     fig.add_trace(
@@ -89,7 +89,7 @@ with container: #1- INDICADORES MACROECONÓMICOS
             marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
             texttemplate="%{text}",
             textposition="top center",
-            text=[f'<span style="color: black;"><b>{value}</b></span>' for value in data_2023["var"]]).data[0])
+            text=[f'<span style="color: #3C2317;"><b>{value}</b></span>' for value in data_2023["var"]]).data[0])
     st.plotly_chart(fig)
    
     # Datos indice UF    
@@ -121,7 +121,7 @@ with container: #1- INDICADORES MACROECONÓMICOS
             line=dict(color="orange"),
             mode="lines+markers+text",
             marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
-            text=[f'<span style="color: black;"><b>{value}</b></span>' for value in df_filtered["UF"]],
+            text=[f'<span style="color: #3C2317;"><b>{value}</b></span>' for value in df_filtered["UF"]],
             textposition="top center"))
 
     fig_indice_uf.update_layout(
@@ -142,7 +142,7 @@ with container: #1- INDICADORES MACROECONÓMICOS
             line=dict(color="blue"),
             mode="lines+markers+text",
             marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
-            text=[f'<span style="color: black;"><b>{value}</b></span>' for value in df_filtered["UTM"]],
+            text=[f'<span style="color: #3C2317;"><b>{value}</b></span>' for value in df_filtered["UTM"]],
             textposition="top center"))
     fig_utm.update_layout(
         title="3.- Evolución UTM en 2023",
@@ -161,7 +161,7 @@ with container: #1- INDICADORES MACROECONÓMICOS
             line=dict(color="green"),
             mode="lines+markers+text",
             marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
-            text=[f'<span style="color: black;"><b>{value}</b></span>' for value in df_filtered["DOLAR"]],
+            text=[f'<span style="color: #3C2317;"><b>{value}</b></span>' for value in df_filtered["DOLAR"]],
             textposition="top center"))
     fig_indice_dolar.update_layout(
         title="4.- Evolución Dólar en 2023",
@@ -195,7 +195,7 @@ with container: #1- INDICADORES MACROECONÓMICOS
             line=dict(color="purple"),
             mode="lines+markers+text",
             marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
-            text=[f'<span style="color: black;"><b>{value}</b></span>' for value in df_pivot_imacec["var"]],
+            text=[f'<span style="color: #3C2317;"><b>{value}</b></span>' for value in df_pivot_imacec["var"]],
             textposition="top center"))
     fig_variaciones_imacec.update_layout(
         title="5.- Indicador Mensual de Actividad Económica - IMACEC en 2023",
@@ -232,7 +232,7 @@ with container: #1- INDICADORES MACROECONÓMICOS
             line=dict(color="red"),
             mode="lines+markers+text",
             marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
-            text=[f'<span style="color: black;"><b>{value}</b></span>' for value in df_filtered["Desempleo %"]],
+            text=[f'<span style="color: #3C2317;"><b>{value}</b></span>' for value in df_filtered["Desempleo %"]],
             textposition="top center"))
 
     fig_desempleo.update_layout(
@@ -266,25 +266,6 @@ with container: #2- INDICADORES MICROECONÓMICOS
     pivot_table_copied[2023] = pivot_table_copied[2023].apply(lambda x: "${:,.0f}".format(x))
     pivot_table_copied[2022] = pivot_table_copied[2022].apply(lambda x: "${:,.0f}".format(x))
     #st.table(pivot_table_copied)    
-    # grafico evolución ANAC
-    fig_var = go.Figure()
-    fig_var.add_trace(
-        go.Scatter(
-        x=pivot_table_copied.index,
-        y=pivot_table_copied["var"],
-        mode="lines+markers+text",  # Agregar marcadores y texto
-        marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),  # Definir marcadores
-        line=dict(color="blue"),  # Color de la línea
-        #text=pivot_table_copied["var"],  # Texto para etiquetas
-        text=[f'<span style="color: black;"><b>{var}</b></span>' for var in pivot_table_copied["var"]],
-        textposition="top center",  # Posición del texto
-        name="Variación %",))
-    fig_var.update_layout(
-        title="1.- Venta de Vehículos Categoria Livianos Comparativo Año 2022-2023",
-        xaxis=dict(title="Mes"),
-        yaxis=dict(title="Variación %"),
-        legend=dict(x=0, y=1.1),)
-    st.plotly_chart(fig_var)
     # grafico evolución ANAC 2
     fig_var = go.Figure()
     # Agregar la línea de variación var en y2
@@ -293,9 +274,9 @@ with container: #2- INDICADORES MICROECONÓMICOS
             x=pivot_table_copied.index,
             y=pivot_table_copied["var"],
             mode="lines+markers+text",
-            marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
-            line=dict(color="red"),  # Cambiar el color a rojo
-            text=[f'<span style="color: black;"><b>{var}</b></span>' for var in pivot_table_copied["var"]],            
+            marker=dict(symbol="circle", size=8, line=dict(color="white", width=2)),
+            line=dict(color="#FF5858"),  # Cambiar el color a rojo
+            text=[f'<span style="color: #3C2317;"><b>{var}</b></span>' for var in pivot_table_copied["var"]],            
             textposition="top center",
             name="Variación %",
             yaxis="y2",))
@@ -304,15 +285,24 @@ with container: #2- INDICADORES MICROECONÓMICOS
         go.Bar(
             x=pivot_table_copied.index,
             y=pivot_table_copied[2022],
+            text=[f'<b>{value}</b>' for value in pivot_table_copied[2022]],
+            textposition="inside",  # Mostrar etiquetas dentro de las barras
+            textfont=dict(color="white", size=10),
+            textangle=-90,  # Color y tamaño de las etiquetas
             name="2022",
-            marker_color="orange",))
+            marker_color="#2F58CD"))
+
     # Agregar la barra para el año 2023
     fig_var.add_trace(
         go.Bar(
             x=pivot_table_copied.index,
             y=pivot_table_copied[2023],
+            text=[f'<b>{value}</b>' for value in pivot_table_copied[2023]],
+            textposition="inside",  # Mostrar etiquetas dentro de las barras
+            textfont=dict(color="white", size=10),  # Color y tamaño de las etiquetas
+            textangle=-90, 
             name="2023",
-            marker_color="blue",))
+            marker_color="#3795BD"))
     fig_var.update_layout(
         title="1. Venta de Vehículos Categoria Livianos Comparativo Año 2022-2023",
         xaxis=dict(title="Mes"),
@@ -335,17 +325,17 @@ with container: #2- INDICADORES MICROECONÓMICOS
         title="2. Segmentación Venta de Vehículos Categoria Livianos 2023",
         labels={"value": "Cantidad", "variable": "Tipo de Vehículo"},
         color_discrete_map={
-            "pasajeros": "blue",
-            "suv": "orange",
-            "camioneta": "red",
-            "comercial": "silver"
+            "pasajeros": "#11009E",
+            "suv": "#4942E4",
+            "camioneta": "#8696FE",
+            "comercial": "#C4B0FF"
         })
 
     fig_anac.update_layout(barmode="stack")
 
     # Agregar etiquetas de datos centradas en cada barra
     for trace in fig_anac.data:
-        trace.text = df_filtered[trace.name].apply(lambda x: f"{x:,}")  # Formatear como número con comas
+        trace.text = df_filtered[trace.name].apply(lambda x: f"<b>{x:,}</b>")
         trace.textposition = 'inside'
         trace.textfont.color = 'white'  # Color del texto en blanco
         trace.textfont.size = 12  # Tamaño del texto
@@ -424,7 +414,7 @@ with container: #3.1- INDICADORES INGRESOS
             mode="lines+markers+text",
             marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
             line=dict(color="red"),
-            text=[f'<span style="color: black;"><b>{var}</b></span>' for var in pivot_table["var"]],
+            text=[f'<span style="color: #3C2317;"><b>{var}</b></span>' for var in pivot_table["var"]],
             textposition="top center",
             name="Variación %",
             yaxis="y2",))
@@ -438,7 +428,7 @@ with container: #3.1- INDICADORES INGRESOS
             textangle=270,  # Orientación vertical
             textfont_color="white",  # Color blanco para las etiquetas
             name="2022",
-            marker_color="orange",))
+            marker_color="#C47AFF",))
     fig_var.add_trace(
         go.Bar(
             x=pivot_table.index,
@@ -449,7 +439,7 @@ with container: #3.1- INDICADORES INGRESOS
             textangle=270,  # Orientación vertical
             textfont_color="white",  # Color blanco para las etiquetas
             name="2023",
-            marker_color="blue",))
+            marker_color="#4649FF",))
 
     fig_var.update_layout(
         title="1.- Ingresos Netos Comparativos años 2022 - 2023",
@@ -476,15 +466,15 @@ with container: #3.1- INDICADORES INGRESOS
             textangle=0,
             textfont_color="white",
             name="Monto",
-            marker_color="blue",))
+            marker_color="#1363DF",))
     fig.add_trace(
         go.Scatter(
             x=df_ingresos_segment_filtered.index,
             y=df_ingresos_segment_filtered["part"],
             mode="lines+markers+text",
             marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
-            line=dict(color="red"),
-            text=[f'<span style="color: black;"><b>{part}</b></span>' for part in df_ingresos_segment_filtered["part"]],
+            line=dict(color="#F54748"),
+            text=[f'<span style="color: #3C2317;"><b>{part}</b></span>' for part in df_ingresos_segment_filtered["part"]],
             textposition="top center",
             name="Participación %",
             yaxis="y2",))
@@ -512,29 +502,26 @@ with container: #3.1- INDICADORES INGRESOS
         title="INDICADORES DE INGRESOS - Composición de Ingresos Netos",
         labels={"value": "Monto", "variable": "Cuentas"},
         color_discrete_map={
-            "Ingreso por Administración": "blue",
-            "Ingresos Boleta Electrónica": "orange",
-            "Ingresos por Abonados": "red"})
-
+            "Ingreso por Administración": "#BFDCAE",
+            "Ingresos Boleta Electrónica": "#206A5D",
+            "Ingresos por Abonados": "#68B0AB"})
     fig.update_layout(
-        barmode="stack",
-        legend=dict(x=0.5, y=-0.6, orientation="h"))  # Posicionar la leyenda debajo del eje x
-
-    # Calcular el valor máximo de las barras
-    max_bar_value = df_for_plot[["Ingreso por Administración", "Ingresos Boleta Electrónica", "Ingresos por Abonados"]].max().max()
-
+        barmode="stack",        
+        legend=dict(x=0, y=-0.6))  # Posicionar la leyenda debajo del eje x
     # Configurar las etiquetas de datos
     for trace in fig.data:
-        trace.text = df_for_plot[trace.name].apply(lambda x: f"${x:,}")  # Formatear como moneda
+        trace.text = df_for_plot[trace.name].apply(lambda x: f"<b>${x:,}</b>")  # Formatear como moneda
         trace.textposition = 'inside'
         trace.textfont.color = 'white'  # Establecer el color del texto en blanco
-        trace.insidetextanchor = 'start'  # Anclar el texto al inicio de la barra
+        #trace.insidetextanchor = 'start'  # Anclar el texto al inicio de la barra
         trace.textangle = 0  # Orientación horizontal del texto
         trace.textposition = 'inside'  # Posicionar el texto dentro de la barra
-        trace.textfont.size = max_bar_value / 12  # Ajustar el tamaño del texto en función del valor máximo de las barras
+        trace.textfont.size = 12  # Ajustar el tamaño del texto en función del valor máximo de las barras
 
     # Mostrar el gráfico en Streamlit
     st.plotly_chart(fig)
+
+
     df_pivot_filtered = df_pivot_percentage[df_pivot_percentage.index != "Total"]
     st.markdown("---")
     st.write(df_pivot_percentage)   
@@ -545,7 +532,7 @@ with container: #3.1- INDICADORES INGRESOS
             y=df_pivot_filtered.loc[cuenta],
             mode='lines+markers+text',  # Agregar marcadores y texto
             marker=dict(symbol="circle", size=8, line=dict(color="white", width=2)),  # Definir marcadores
-            text=[f'<span style="color: black;"><b>{value}</b></span>' for value in df_pivot_filtered.loc[cuenta]],  # Texto para etiquetas
+            text=[f'<span style="color: #3C2317;"><b>{value}</b></span>' for value in df_pivot_filtered.loc[cuenta]],  # Texto para etiquetas
             textposition="top center",  # Posición del texto
             name=cuenta))
     fig_evolucion.update_layout(
@@ -554,6 +541,18 @@ with container: #3.1- INDICADORES INGRESOS
         yaxis_title="Porcentaje (%)",
         legend=dict(x=0.5, y=-0.6))
     st.plotly_chart(fig_evolucion)
+
+   
+
+
+
+
+
+
+
+   
+
+
 with container: #4.4- INDICADORES REMUNERACIONES
     st.header("4.1.- INDICADORES DE DOTACIÓN")
     st.markdown("---")
@@ -585,9 +584,6 @@ with container: #4.4- INDICADORES REMUNERACIONES
     
 
     st.write(nuevo_dataframe)
-
-    
-
     # Crear el gráfico utilizando plotly
     fig_var = go.Figure()
 
@@ -599,7 +595,7 @@ with container: #4.4- INDICADORES REMUNERACIONES
             mode="lines+markers+text",
             marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
             line=dict(color="red"),
-            text=[f'<span style="color: black;"><b>{part}</b></span>' for part in nuevo_dataframe.loc["part"]],
+            text=[f'<span style="color: #3C2317;"><b>{part}</b></span>' for part in nuevo_dataframe.loc["part"]],
             textposition="top center",
             name="Participación %",
             yaxis="y2",))
@@ -615,7 +611,7 @@ with container: #4.4- INDICADORES REMUNERACIONES
             textangle=270, 
             textfont_color="white", 
             name="Total", 
-            marker_color="orange",))
+            marker_color="#4D77FF",))
 
     # Agregar la barra "Honorarios"
     fig_var.add_trace(
@@ -628,7 +624,7 @@ with container: #4.4- INDICADORES REMUNERACIONES
             textangle=270, 
             textfont_color="white", 
             name="Honorarios", 
-            marker_color="blue",))
+            marker_color="#5EE6EB",))
 
     # Actualizar el diseño del gráfico
     fig_var.update_layout(
@@ -678,16 +674,16 @@ with container: #5.2- INDICADORES DE GASTOS
         fig_combined = go.Figure()
         # Agregar las barras de ingresos y remuneraciones
         fig_combined.add_trace(go.Bar(x=df2['Meses'], y=df2['10 - INGRESOS'],
-                                        name="Ingresos", offsetgroup=0, marker_color='rgb(51, 153, 255)'))
+                                        name="Ingresos", offsetgroup=0, marker_color='#366ED8'))
         fig_combined.add_trace(go.Bar(x=df2['Meses'], y=df2['60 - REMUNERACION'],
-                                        name="Remuneraciones", offsetgroup=0, marker_color='rgba(255, 128, 0,1)'))
+                                        name="Remuneraciones", offsetgroup=0, marker_color='#F3A953'))
         # Agregar la línea al gráfico secundario
         fig_combined.add_trace(go.Scatter(x=df2['Meses'], y=df2['part%'],
                                             mode="lines+markers+text", name="% Part",
                                             line=dict(width=3, color="red"),
                                             marker=dict(size=8, symbol="circle", line=dict(color="white", width=2)),
                                             yaxis="y2",                                            
-                                            text=[f'<span style="color: blue;"><b>{value:.2f}%</b></span>' for value in df2['part%']],
+                                            text=[f'<span style="color: #352F44;"><b>{value:.2f}%</b></span>' for value in df2['part%']],
                                             textposition="top center"))
         # Configurar el diseño del gráfico
         fig_combined.update_layout(yaxis=dict(title="Valores", showgrid=True, zeroline=True))
