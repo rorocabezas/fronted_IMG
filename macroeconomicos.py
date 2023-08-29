@@ -29,6 +29,20 @@ def eerr():
     df_eerr = conn.query("SELECT Grupo,Cuentas,Supervisor,Sucursal,año, Meses, Monto FROM QRY_TP_EERR WHERE `Año` >= 2022 and Grupo <> '90 - Extras' and Sucursal <>  'Ajuste COQUIMBO'", ttl=600)
     return df_eerr
 
+
+@st.cache_data(ttl=3600)
+def RRHH_dotacion():
+    df_dotacion_trabajadores = conn.query("""SELECT
+	RRHH_Dotacion.rut, 
+	RRHH_Dotacion.item, 
+	RRHH_Dotacion.grupo, 
+	RRHH_Dotacion.cantidad, 
+	DM_PERIODO.Periodo as periodo,
+	YEAR(RRHH_Dotacion.fecha) AS año
+    FROM RRHH_Dotacion LEFT JOIN DM_PERIODO
+    ON RRHH_Dotacion.fecha = DM_PERIODO.Fecha""", ttl=600)
+    return df_dotacion_trabajadores
+
 container = st.container()
 
 meses_mapping = {
@@ -185,25 +199,29 @@ with container: #1- INDICADORES MACROECONÓMICOS
     df_pivot_imacec = df_pivot_imacec[["var"]]
     #st.table(df_pivot_imacec)
 
-    # grafico evolución IMACEC
+    # Filtrar los meses que tienen valor en la columna 'var'
+    df_filtered_months = df_pivot_imacec[df_pivot_imacec['var'] != replacement_value]
+
+    # Crear el gráfico solo para los meses con valor en la columna 'var'
     fig_variaciones_imacec = go.Figure()
     fig_variaciones_imacec.add_trace(
         go.Scatter(
-            x=df_pivot_imacec.index,
-            y=df_pivot_imacec["var"],
-            name="Variaciones IMACEC",
-            line=dict(color="purple"),
-            mode="lines+markers+text",
-            marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
-            text=[f'<span style="color: #3C2317;"><b>{value}</b></span>' for value in df_pivot_imacec["var"]],
-            textposition="top center"))
-    fig_variaciones_imacec.update_layout(
-        title="5.- Indicador Mensual de Actividad Económica - IMACEC en 2023",
-        xaxis=dict(title="Mes"),
-        yaxis=dict(title="Variación IMACEC (%)"),
-        legend=dict(x=0, y=1.1))
-    st.plotly_chart(fig_variaciones_imacec)   
+            x=df_filtered_months.index,
+            y=df_filtered_months['var'],
+            name='Variaciones IMACEC',
+            line=dict(color='purple'),
+            mode='lines+markers+text',
+            marker=dict(symbol='circle', size=8, line=dict(color='white', width=1)),
+            text=[f'<span style="color: #3C2317;"><b>{value}</b></span>' for value in df_filtered_months['var']],
+            textposition='top center'))
 
+    fig_variaciones_imacec.update_layout(
+        title='5.- Indicador Mensual de Actividad Económica - IMACEC en 2023',
+        xaxis=dict(title='Mes'),
+        yaxis=dict(title='Variación IMACEC (%)'),
+        legend=dict(x=0, y=1.1))
+
+    st.plotly_chart(fig_variaciones_imacec)
     # Datos indice DESEMPLEO
     df_desempleo= pd.read_csv(csv_path_desempleo, sep=";")    
     df_desempleo["mes"] = df_desempleo["mes"].map(meses_mapping)              
@@ -241,6 +259,7 @@ with container: #1- INDICADORES MACROECONÓMICOS
         yaxis=dict(title="Desempleo %"),
         legend=dict(x=0, y=1.1))
     st.plotly_chart(fig_desempleo)
+
 with container: #2- INDICADORES MICROECONÓMICOS
     st.header("2.- INDICADORES MICROECONÓMICOS :bar_chart:") 
     # Datos indice ANAC
@@ -263,8 +282,8 @@ with container: #2- INDICADORES MICROECONÓMICOS
     pivot_table_copied["var"] = pivot_table_copied["var"].apply(lambda x: f"{x:.1f} %")
     replacement_value = " "
     pivot_table_copied["var"] = pivot_table_copied["var"].replace("-100.0 %", replacement_value)
-    pivot_table_copied[2023] = pivot_table_copied[2023].apply(lambda x: "${:,.0f}".format(x))
-    pivot_table_copied[2022] = pivot_table_copied[2022].apply(lambda x: "${:,.0f}".format(x))
+    pivot_table_copied[2023] = pivot_table_copied[2023].apply(lambda x: "{:,.0f}".format(x))
+    pivot_table_copied[2022] = pivot_table_copied[2022].apply(lambda x: "{:,.0f}".format(x))
     #st.table(pivot_table_copied)    
     # grafico evolución ANAC 2
     fig_var = go.Figure()
@@ -276,7 +295,7 @@ with container: #2- INDICADORES MICROECONÓMICOS
             mode="lines+markers+text",
             marker=dict(symbol="circle", size=8, line=dict(color="white", width=2)),
             line=dict(color="#FF5858"),  # Cambiar el color a rojo
-            text=[f'<span style="color: #3C2317;"><b>{var}</b></span>' for var in pivot_table_copied["var"]],            
+            text=[f'<span style="color: #0C356A;"><b>{var}</b></span>' for var in pivot_table_copied["var"]],            
             textposition="top center",
             name="Variación %",
             yaxis="y2",))
@@ -380,8 +399,6 @@ with container: #3.1- INDICADORES INGRESOS
     df_ingresos_segment_filtered["Monto"] = df_ingresos_segment_filtered["Monto"].apply(
         lambda x: "$" + format(x, ",") if not pd.isna(x) else "NaN")
     
-    
-
     #datos de dataframe Composición de Ingresos Netos 
     df_ingresos_composicion = df_original[
         (df_original["Grupo"] == '10 - INGRESOS') &
@@ -541,18 +558,6 @@ with container: #3.1- INDICADORES INGRESOS
         yaxis_title="Porcentaje (%)",
         legend=dict(x=0.5, y=-0.6))
     st.plotly_chart(fig_evolucion)
-
-   
-
-
-
-
-
-
-
-   
-
-
 with container: #4.4- INDICADORES REMUNERACIONES
     st.header("4.1.- INDICADORES DE DOTACIÓN")
     st.markdown("---")
@@ -562,7 +567,6 @@ with container: #4.4- INDICADORES REMUNERACIONES
     columns_remuneracion = ["Meses",  "Cuentas" , "Monto"]
     df_remuneracion_comparativo = df_remuneracion_eerr[columns_remuneracion]
    
-    # Crear el pivot table
     pivot_table_remuneracion = df_remuneracion_comparativo.pivot_table(
         index='Cuentas',  
         columns='Meses',  
@@ -583,8 +587,6 @@ with container: #4.4- INDICADORES REMUNERACIONES
     nuevo_dataframe.loc["Honorarios"] = nuevo_dataframe.loc["Honorarios"].apply(lambda x: f"${int(x):,}")
     
 
-    st.write(nuevo_dataframe)
-    # Crear el gráfico utilizando plotly
     fig_var = go.Figure()
 
     # Agregar la línea "part"
@@ -595,7 +597,7 @@ with container: #4.4- INDICADORES REMUNERACIONES
             mode="lines+markers+text",
             marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
             line=dict(color="red"),
-            text=[f'<span style="color: #3C2317;"><b>{part}</b></span>' for part in nuevo_dataframe.loc["part"]],
+            text=[f'<span style="color: #6C3428;"><b>{part}</b></span>' for part in nuevo_dataframe.loc["part"]],
             textposition="top center",
             name="Participación %",
             yaxis="y2",))
@@ -624,7 +626,7 @@ with container: #4.4- INDICADORES REMUNERACIONES
             textangle=270, 
             textfont_color="white", 
             name="Honorarios", 
-            marker_color="#5EE6EB",))
+            marker_color="#1D5D9B",))
 
     # Actualizar el diseño del gráfico
     fig_var.update_layout(
@@ -643,6 +645,207 @@ with container: #4.4- INDICADORES REMUNERACIONES
 
     # Mostrar el gráfico en Streamlit
     st.plotly_chart(fig_var)
+
+    st.header("4.2- INDICADORES DE DOTACIÓN")
+    st.markdown("---")
+    df_dotacion = RRHH_dotacion()
+
+    # Crear el pivot table
+    pivot_table_dotacion = df_dotacion.pivot_table(
+        index='item',  
+        columns='periodo',  
+        values='cantidad',  
+        aggfunc='sum')   
+    
+    pivot_table_dotacion = pivot_table_dotacion.fillna(0)
+    
+    full_partime_rows = pivot_table_dotacion[pivot_table_dotacion.index.isin(['Full', 'Partime'])]
+    egresos_rows = pivot_table_dotacion[pivot_table_dotacion.index.isin(['Voluntario', 'Desvinculado'])]
+    honorarios_rows = pivot_table_dotacion[pivot_table_dotacion.index.isin(['Honorarios '])]
+    ingresos_rows = pivot_table_dotacion[pivot_table_dotacion.index.isin(['Ingreso'])]
+
+    dotacion_sum = full_partime_rows.sum()
+    egresos_sum = egresos_rows.sum()
+    honorarios_sum = honorarios_rows.sum()
+    ingresos_sum = ingresos_rows.sum()
+
+    pivot_table_dotacion.loc['dotacion'] = dotacion_sum
+    pivot_table_dotacion.loc['egresos'] = egresos_sum
+    #pivot_table_dotacion.loc['honrarios'] = honorarios_sum
+
+    # Calcular la suma de "dotacion" y "Honorarios"
+    dotacion_total_sum = dotacion_sum + honorarios_sum
+    dotacion_real = dotacion_total_sum + ingresos_sum - egresos_sum
+    egresos_porc = round(((egresos_sum / dotacion_total_sum)* 100),1)
+
+    # Agregar la suma como nueva fila a la tabla pivote
+    pivot_table_dotacion.loc['dotacion_total'] = dotacion_total_sum
+    pivot_table_dotacion.loc['dotacion_real'] = dotacion_real
+    pivot_table_dotacion.loc['egresos_porc'] = egresos_porc
+    
+    # Reordenar las filas según un orden personalizado
+    order = ['Full', 'Partime', 'dotacion', 'Honorarios ', 'dotacion_total', 'Ingreso', 'egresos', 'dotacion_real', 'egresos_porc']
+    
+    # Crear un diccionario para renombrar las filas
+    column_show = {
+    'dotacion': 'Dotación Nominal',    
+    'Honorarios ': 'Honorarios',
+    'dotacion_total': 'Dotación Total',
+    'Ingreso': 'Ingresos',
+    'egresos': 'Egresos',
+    'dotacion_real': 'Dotación Real',
+    'egresos_porc': 'Egresos %'}    
+
+    pivot_table_dotacion = pivot_table_dotacion.loc[order].rename(index=column_show)
+
+    # Crear la figura
+    fig_var = go.Figure()
+
+    # Agregar la línea "% egresos"
+    fig_var.add_trace(
+        go.Scatter(
+            x=pivot_table_dotacion.columns,
+            y=pivot_table_dotacion.loc["Egresos %"],
+            mode="lines+markers+text",
+            marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
+            line=dict(color="red"),
+            text=[f'<span style="color: #6C3428;"><b>{round(val,0)}%</b></span>' for val in pivot_table_dotacion.loc["Egresos %"]],
+            textposition="top center",
+            name="% Egresos",
+            yaxis="y2",
+        )
+    )
+
+    bar_columns = ["Dotación Total", "Egresos", "Ingresos"]
+    colors = ["#4D77FF", "#1D5D9B", "#59C3C3"]
+
+    for i, column in enumerate(bar_columns):
+        fig_var.add_trace(
+            go.Bar(
+                x=pivot_table_dotacion.columns,
+                y=pivot_table_dotacion.loc[column],
+                text=pivot_table_dotacion.loc[column],
+                textposition="inside",
+                insidetextanchor='start',
+                textangle=0,
+                textfont_color="white",
+                name=column,
+                marker_color=colors[i],
+            )
+        )
+
+    # Actualizar el diseño del gráfico
+    fig_var.update_layout(
+        title="Dotación Vs Rotación",
+        xaxis=dict(title="Meses"),
+        yaxis=dict(title="Valor"),
+        yaxis2=dict(
+            title="% Egresos",
+            overlaying="y",
+            side="right",
+            showgrid=False,
+        ),
+        legend=dict(x=0, y=-0.6),
+        barmode="stack",
+    )
+
+    # Mostrar el gráfico en Streamlit
+    st.plotly_chart(fig_var)
+
+
+    # Crear la figura
+    fig_var = go.Figure()
+
+    # Agregar las barras apiladas para "Full", "Partime" y "Honorarios"
+    bar_columns = ["Full", "Partime", "Honorarios"]
+    colors = ["#4D77FF", "#FFAB76", "#B8B5FF"]
+
+    for i, column in enumerate(bar_columns):
+        fig_var.add_trace(
+            go.Bar(
+                x=pivot_table_dotacion.columns,
+                y=pivot_table_dotacion.loc[column],
+                text=pivot_table_dotacion.loc[column],
+                textposition="inside",
+                insidetextanchor='start',
+                textangle=0,
+                textfont_color="white",
+                name=column,
+                marker_color=colors[i],
+            )
+        )
+
+    # Agregar la línea para "Dotación Total"
+    fig_var.add_trace(
+        go.Scatter(
+            x=pivot_table_dotacion.columns,
+            y=pivot_table_dotacion.loc["Dotación Total"],
+            mode="lines+markers+text",
+            marker=dict(symbol="circle", size=8, line=dict(color="white", width=1)),
+            line=dict(color="#810034"),
+            text=[f'<span style="color: #6C3428;"><b>{val:.0f}</b></span>' for val in pivot_table_dotacion.loc["Dotación Total"]],
+            textposition="top center",
+            name="Dotación Total",
+        )
+    )
+
+    # Actualizar el diseño del gráfico
+    fig_var.update_layout(
+        title="Distribución Dotación Real",
+        xaxis=dict(title="Meses"),
+        yaxis=dict(title="Valor"),
+        legend=dict(x=0, y=-0.6),
+        barmode="stack",
+    )
+
+    # Mostrar el gráfico en Streamlit
+    st.plotly_chart(fig_var)
+
+    fig_var = go.Figure()
+
+    # Agregar las barras apiladas horizontales
+    bar_columns = ["Egresos", "Ingresos"]
+    colors = ["#1D5D9B", "#59C3C3"]
+
+    for i, column in enumerate(bar_columns):
+        if column == "Egresos":
+            data = -1 * pivot_table_dotacion.loc[column]  # Convertir Egresos en negativo
+        else:
+            data = pivot_table_dotacion.loc[column]
+        
+        fig_var.add_trace(
+            go.Bar(
+                y=pivot_table_dotacion.columns,
+                x=data,
+                orientation='h',  # Barra horizontal
+                text=data,
+                textposition="inside",
+                insidetextanchor='start',
+                textangle=0,
+                textfont_color="white",
+                name=column,
+                marker_color=colors[i],
+            )
+        )
+
+    # Actualizar el diseño del gráfico
+    fig_var.update_layout(
+        title="Egresos vs Ingresos",
+        xaxis=dict(title="Valor"),
+        yaxis=dict(title="Meses"),
+        legend=dict(x=0, y=-0.6),
+        barmode="relative",  # Barras apiladas
+    )
+
+    # Mostrar el gráfico en Streamlit
+    st.plotly_chart(fig_var)
+
+    
+        
+
+    
+ 
+
 with container: #5.1- INDICADORES DE GASTOS
     st.header("5.1- INDICADORES DE GASTOS")
     st.markdown("---")
@@ -660,7 +863,6 @@ with container: #5.1- INDICADORES DE GASTOS
     resultado = resultado[column_order]
     resultado = resultado.sort_index()
     st.dataframe(resultado, width=0)
-with container: #5.2- INDICADORES DE GASTOS
     with st.expander(" 1.- Gastos de Remuneración Sobre Venta"):
         df_remuneraciones = df_gastos_original[df_gastos_original['Grupo'].apply(lambda val: any(val == s for s in ['60 - REMUNERACION', '10 - INGRESOS']))]
         df2 = df_remuneraciones.pivot_table(index='Meses', columns='Grupo', values='Monto', aggfunc='sum')
@@ -674,7 +876,7 @@ with container: #5.2- INDICADORES DE GASTOS
         fig_combined = go.Figure()
         # Agregar las barras de ingresos y remuneraciones
         fig_combined.add_trace(go.Bar(x=df2['Meses'], y=df2['10 - INGRESOS'],
-                                        name="Ingresos", offsetgroup=0, marker_color='#366ED8'))
+                                        name="Ingresos", offsetgroup=0, marker_color='#3399FF'))
         fig_combined.add_trace(go.Bar(x=df2['Meses'], y=df2['60 - REMUNERACION'],
                                         name="Remuneraciones", offsetgroup=0, marker_color='#F3A953'))
         # Agregar la línea al gráfico secundario
@@ -683,7 +885,7 @@ with container: #5.2- INDICADORES DE GASTOS
                                             line=dict(width=3, color="red"),
                                             marker=dict(size=8, symbol="circle", line=dict(color="white", width=2)),
                                             yaxis="y2",                                            
-                                            text=[f'<span style="color: #352F44;"><b>{value:.2f}%</b></span>' for value in df2['part%']],
+                                            text=[f'<span style="color: blue;"><b>{value:.2f}%</b></span>' for value in df2['part%']],
                                             textposition="top center"))
         # Configurar el diseño del gráfico
         fig_combined.update_layout(yaxis=dict(title="Valores", showgrid=True, zeroline=True))
@@ -714,9 +916,9 @@ with container: #5.2- INDICADORES DE GASTOS
         fig_combined = go.Figure()
         # Agregar las barras de ingresos y arriendos
         fig_combined.add_trace(go.Bar(x=df2['Meses'], y=df2['10 - INGRESOS'],
-                                    name="Ingresos", offsetgroup=0, marker_color='rgb(51, 153, 255)'))
+                                    name="Ingresos", offsetgroup=0, marker_color='#3399FF'))
         fig_combined.add_trace(go.Bar(x=df2['Meses'], y=df2['70 - ARRIENDOS'],
-                                    name="Arriendos", offsetgroup=0, marker_color='rgba(255, 128, 0,1)'))
+                                    name="Arriendos", offsetgroup=0, marker_color='#F3A953'))
         # Agregar la línea al gráfico secundario
         fig_combined.add_trace(go.Scatter(x=df2['Meses'], y=df2['part%'],
             mode="lines+markers+text", name="% Part",
@@ -756,9 +958,9 @@ with container: #5.2- INDICADORES DE GASTOS
         fig_combined = go.Figure()
         # Agregar las barras de ingresos y materiales
         fig_combined.add_trace(go.Bar(x=df2['Meses'], y=df2['10 - INGRESOS'],
-                                    name="Ingresos", offsetgroup=0, marker_color='rgb(51, 153, 255)'))
+                                    name="Ingresos", offsetgroup=0, marker_color='#3399FF'))
         fig_combined.add_trace(go.Bar(x=df2['Meses'], y=df2['20 - MATERIALES'],
-                    name="Materiales", offsetgroup=0, marker_color='rgba(255, 128, 0,1)'))
+                    name="Materiales", offsetgroup=0,  marker_color='#F3A953'))
         # Agregar la línea al gráfico secundario
         fig_combined.add_trace(go.Scatter(x=df2['Meses'], y=df2['part%'],
                                         mode="lines+markers+text", name="% Part",
@@ -795,9 +997,9 @@ with container: #5.2- INDICADORES DE GASTOS
         df2['part%'] = df2['part%'].str.rstrip('%').astype(float)
         fig_combined = go.Figure()
         fig_combined.add_trace(go.Bar(x=df2['Meses'], y=df2['10 - INGRESOS'],
-                name="Ingresos", offsetgroup=0, marker_color='rgb(51, 153, 255)'))
+                name="Ingresos", offsetgroup=0, marker_color='#3399FF'))
         fig_combined.add_trace(go.Bar(x=df2['Meses'], y=df2['30 - MANTENCION'],
-                name="Mantención", offsetgroup=0, marker_color='rgba(255, 128, 0,1)'))
+                name="Mantención", offsetgroup=0, marker_color='#F3A953'))
         fig_combined.add_trace(go.Scatter(x=df2['Meses'], y=df2['part%'],
                 mode="lines+markers+text", name="% Part",
                 line=dict(width=3, color="red"),
@@ -832,9 +1034,9 @@ with container: #5.2- INDICADORES DE GASTOS
         df2['part%'] = df2['part%'].str.rstrip('%').astype(float)
         fig_combined = go.Figure()
         fig_combined.add_trace(go.Bar(x=df2['Meses'], y=df2['10 - INGRESOS'],
-                name="Ingresos", offsetgroup=0, marker_color='rgb(51, 153, 255)'))
+                name="Ingresos", offsetgroup=0, marker_color='#3399FF'))
         fig_combined.add_trace(go.Bar(x=df2['Meses'], y=df2['40 - SERVICIOS'],
-                name="Servicios", offsetgroup=0, marker_color='rgba(255, 128, 0,1)'))
+                name="Servicios", offsetgroup=0, marker_color='#F3A953'))
         fig_combined.add_trace(go.Scatter(x=df2['Meses'], y=df2['part%'],
                 mode="lines+markers+text", name="% Part",
                 line=dict(width=3, color="red"),
@@ -868,9 +1070,9 @@ with container: #5.2- INDICADORES DE GASTOS
         df2['part%'] = df2['part%'].str.rstrip('%').astype(float)
         fig_combined = go.Figure()
         fig_combined.add_trace(go.Bar(x=df2['Meses'], y=df2['10 - INGRESOS'],
-                name="Ingresos", offsetgroup=0, marker_color='rgb(51, 153, 255)'))
+                name="Ingresos", offsetgroup=0, marker_color='#3399FF'))
         fig_combined.add_trace(go.Bar(x=df2['Meses'], y=df2['50 - VARIOS'],
-                name="Varios", offsetgroup=0, marker_color='rgba(255, 128, 0,1)'))
+                name="Varios", offsetgroup=0, marker_color='#F3A953'))
         fig_combined.add_trace(go.Scatter(x=df2['Meses'], y=df2['part%'],
                 mode="lines+markers+text", name="% Part",
                 line=dict(width=3, color="red"),
@@ -906,9 +1108,9 @@ with container: #5.2- INDICADORES DE GASTOS
         df_nuevo = df_seleccion.T.copy()       
         fig_combined = go.Figure()
         fig_combined.add_trace(go.Bar(x=df_nuevo.index, y=df_nuevo['10 - INGRESOS'],
-                name="Ingresos", offsetgroup=0, marker_color='rgb(51, 153, 255)'))
+                name="Ingresos", offsetgroup=0, marker_color='#3399FF'))
         fig_combined.add_trace(go.Bar(x=df_nuevo.index, y=df_nuevo['R.O.P'],
-                name="Total", offsetgroup=0, marker_color='rgba(255, 128, 0,1)'))
+                name="Total", offsetgroup=0, marker_color='#F3A953'))
         fig_combined.add_trace(go.Scatter(x=df_nuevo.index, y=df_nuevo['Part%'],
                 mode="lines+markers+text", name="% Part",
                 line=dict(width=3, color="red"),
@@ -936,12 +1138,6 @@ with container: #5.2- INDICADORES DE GASTOS
         
 
         st.dataframe(df_nuevo,  width=0)
-
-        
-
-with container: #6.1- INDICADORES RESULTADO OPERACIONAL
-    st.header("6.1- INDICADORES RESULTADO OPERACIONAL")
-    st.markdown("---")
 
 
 
